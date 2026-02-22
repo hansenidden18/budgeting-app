@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: budget-tracker
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=file:/app/data/budget.db
+      - NODE_ENV=production
+    volumes:
+      - budget-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  budget-data:
+    driver: local
