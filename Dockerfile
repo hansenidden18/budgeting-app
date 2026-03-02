@@ -3,7 +3,7 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache python3 make g++
 COPY package.json package-lock.json ./
-RUN npm ci --frozen-lockfile
+RUN npm ci --frozen-lockfile --ignore-scripts
 
 # Stage 2: Build
 FROM node:20-alpine AS builder
@@ -33,7 +33,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Install only production deps + prisma + tsx for entrypoint
-RUN npm ci --frozen-lockfile --omit=dev
+RUN npm ci --frozen-lockfile --omit=dev --ignore-scripts
 RUN npx prisma generate
 
 COPY docker-entrypoint.sh ./

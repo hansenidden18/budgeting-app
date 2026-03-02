@@ -2,7 +2,7 @@
 set -e
 
 echo "Running database migrations..."
-npx prisma db push --skip-generate
+npx prisma db push --url "$DATABASE_URL"
 
 echo "Seeding default categories (if empty)..."
 npx tsx prisma/seed.ts || true
