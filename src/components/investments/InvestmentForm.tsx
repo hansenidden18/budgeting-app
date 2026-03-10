@@ -34,6 +34,7 @@ interface InvestmentFormProps {
 export function InvestmentForm({ investment, open, onOpenChange, onSuccess }: InvestmentFormProps) {
   const isEdit = !!investment
   const [name, setName] = useState("")
+  const [ticker, setTicker] = useState("")
   const [assetType, setAssetType] = useState<AssetType>("STOCK")
   const [avgBuyPrice, setAvgBuyPrice] = useState("")
   const [currentPrice, setCurrentPrice] = useState("")
@@ -46,6 +47,7 @@ export function InvestmentForm({ investment, open, onOpenChange, onSuccess }: In
   useEffect(() => {
     if (open) {
       setName(investment?.name ?? "")
+      setTicker(investment?.ticker ?? "")
       setAssetType((investment?.assetType as AssetType) ?? "STOCK")
       setAvgBuyPrice(investment ? String(investment.avgBuyPrice) : "")
       setCurrentPrice(investment ? String(investment.currentPrice) : "")
@@ -65,6 +67,7 @@ export function InvestmentForm({ investment, open, onOpenChange, onSuccess }: In
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name,
+            ticker: isPrivate ? "" : ticker,
             assetType,
             avgBuyPrice: parseFloat(avgBuyPrice),
             currentPrice: parseFloat(currentPrice),
@@ -97,12 +100,12 @@ export function InvestmentForm({ investment, open, onOpenChange, onSuccess }: In
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="inv-name">Ticker / Name</Label>
+              <Label htmlFor="inv-name">Name</Label>
               <Input
                 id="inv-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. NVDA or Bitcoin"
+                placeholder="e.g. Nvidia or Bitcoin"
                 required
               />
             </div>
@@ -120,6 +123,20 @@ export function InvestmentForm({ investment, open, onOpenChange, onSuccess }: In
               </Select>
             </div>
           </div>
+          {!isPrivate && (
+            <div className="space-y-2">
+              <Label htmlFor="ticker">Ticker (for live price refresh)</Label>
+              <Input
+                id="ticker"
+                value={ticker}
+                onChange={(e) => setTicker(e.target.value.toUpperCase())}
+                placeholder="e.g. AAPL, BTC-USD, VTI"
+              />
+              <p className="text-xs text-muted-foreground">
+                Optional. Crypto uses format like BTC-USD, ETH-USD.
+              </p>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="avg-buy">

@@ -94,6 +94,42 @@ export async function GET(request: Request) {
     .filter((e) => e.amount > 0)
     .reduce((sum, e) => sum + e.amount, 0)
 
+  // Previous month comparison
+  const prevMonthStart = new Date(year, month - 2, 1)
+  const prevMonthEnd = new Date(year, month - 1, 1)
+  const prevExpenses = allExpenses.filter((e) => {
+    const d = new Date(e.date)
+    return d >= prevMonthStart && d < prevMonthEnd
+  })
+  const previousMonthTotal = prevExpenses
+    .filter((e) => e.amount > 0)
+    .reduce((sum, e) => sum + e.amount, 0)
+  const monthOverMonthChange =
+    previousMonthTotal > 0
+      ? ((selectedMonthTotal - previousMonthTotal) / previousMonthTotal) * 100
+      : null
+
+  // Category insights: per-category month-over-month
+  const prevCatTotals = new Map<string, number>()
+  for (const e of prevExpenses.filter((e) => e.amount > 0)) {
+    prevCatTotals.set(e.category.name, (prevCatTotals.get(e.category.name) ?? 0) + e.amount)
+  }
+  const currCatTotals = new Map<string, number>()
+  for (const e of periodExpenses.filter((e) => e.amount > 0)) {
+    currCatTotals.set(e.category.name, (currCatTotals.get(e.category.name) ?? 0) + e.amount)
+  }
+  const allInsightCats = new Set([...prevCatTotals.keys(), ...currCatTotals.keys()])
+  const insights = [...allInsightCats]
+    .map((name) => {
+      const current = currCatTotals.get(name) ?? 0
+      const previous = prevCatTotals.get(name) ?? 0
+      const changeDollar = current - previous
+      const changePercent = previous > 0 ? (changeDollar / previous) * 100 : current > 0 ? 100 : 0
+      return { name, current, previous, changePercent, changeDollar }
+    })
+    .filter((i) => Math.abs(i.changePercent) > 10 && Math.abs(i.changeDollar) > 20)
+    .sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent))
+
   const ytdTotal = ytdExpenses
     .filter((e) => e.amount > 0)
     .reduce((sum, e) => sum + e.amount, 0)
@@ -126,9 +162,12 @@ export async function GET(request: Request) {
       colors: ytdColors,
     },
     selectedMonthTotal,
+    previousMonthTotal,
+    monthOverMonthChange,
     ytdTotal,
     largestCategory,
     categoryNames: allCatNames,
     categoryColors: Object.fromEntries(categories.map((c) => [c.name, c.color])),
+    insights,
   })
 }

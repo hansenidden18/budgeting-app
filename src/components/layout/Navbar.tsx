@@ -2,15 +2,18 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart2, CreditCard, FolderOpen, TrendingUp } from "lucide-react"
+import { BarChart2, CreditCard, FolderOpen, TrendingUp, Repeat, Wallet, Target } from "lucide-react"
 import { ThemeToggle } from "./ThemeToggle"
 import { cn } from "@/lib/utils"
 
 const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: BarChart2 },
   { href: "/expenses", label: "Expenses", icon: CreditCard },
+  { href: "/subscriptions", label: "Subscriptions", icon: Repeat },
   { href: "/categories", label: "Categories", icon: FolderOpen },
   { href: "/investments", label: "Investments", icon: TrendingUp },
+  { href: "/net-worth", label: "Net Worth", icon: Wallet },
+  { href: "/savings-goals", label: "Goals", icon: Target },
 ]
 
 export function Navbar() {

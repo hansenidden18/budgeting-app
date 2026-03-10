@@ -49,8 +49,16 @@ export default function ExpensesPage() {
   }, [fetchCategories])
 
   useEffect(() => {
-    fetchExpenses()
-  }, [fetchExpenses])
+    // Auto-generate subscription expenses for the viewed month
+    const m = month && month !== "0" ? month : String(now.getMonth() + 1)
+    const y = year || String(now.getFullYear())
+    fetch("/api/subscriptions/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ year: Number(y), month: Number(m) }),
+    }).then(() => fetchExpenses())
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [year, month])
 
   const totalAmount = expenses.reduce((sum, e) => sum + e.amount, 0)
 

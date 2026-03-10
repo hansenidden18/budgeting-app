@@ -35,13 +35,14 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { name, assetType, avgBuyPrice, currentPrice, quantity, notes } = await request.json()
+  const { name, assetType, avgBuyPrice, currentPrice, quantity, notes, ticker } = await request.json()
   if (!name || !assetType || avgBuyPrice === undefined || currentPrice === undefined) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
   }
   const inv = await prisma.investment.create({
     data: {
       name: name.trim(),
+      ticker: ticker?.trim() || null,
       assetType,
       avgBuyPrice: parseFloat(avgBuyPrice),
       currentPrice: parseFloat(currentPrice),

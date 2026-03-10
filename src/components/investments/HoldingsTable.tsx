@@ -73,7 +73,12 @@ export function HoldingsTable({ investments, onEdit, onRefresh }: HoldingsTableP
             const gl = inv.gainLossDollar ?? 0
             return (
               <TableRow key={inv.id}>
-                <TableCell className="font-medium">{inv.name}</TableCell>
+                <TableCell className="font-medium">
+                  <div>{inv.name}</div>
+                  {inv.ticker && (
+                    <div className="text-xs text-muted-foreground">{inv.ticker}</div>
+                  )}
+                </TableCell>
                 <TableCell>
                   <Badge
                     style={{

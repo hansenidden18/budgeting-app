@@ -8,7 +8,29 @@ import { CategoryPieChart } from "@/components/dashboard/CategoryPieChart"
 import { TrendLineChart } from "@/components/dashboard/TrendLineChart"
 import { YtdSummaryTable } from "@/components/dashboard/YtdSummaryTable"
 import { formatCurrency } from "@/lib/utils"
+import { TrendingUp, TrendingDown, Minus } from "lucide-react"
 import type { DashboardData } from "@/lib/types"
+
+function TrendBadge({ change }: { change: number | null }) {
+  if (change === null || change === undefined) return null
+  const abs = Math.abs(change)
+  if (abs < 0.5) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+        <Minus className="h-3 w-3" />
+        no change
+      </span>
+    )
+  }
+  // Spending up = bad (red), spending down = good (green)
+  const isUp = change > 0
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs font-medium ${isUp ? "text-red-500" : "text-emerald-500"}`}>
+      {isUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+      {isUp ? "+" : ""}{change.toFixed(1)}% vs last month
+    </span>
+  )
+}
 
 export default function DashboardPage() {
   const now = new Date()
@@ -28,8 +50,14 @@ export default function DashboardPage() {
   }, [year, month])
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    // Auto-generate subscription expenses for the current month
+    fetch("/api/subscriptions/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ year: Number(year), month: Number(month) }),
+    }).then(() => fetchData())
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [year, month])
 
   return (
     <div className="space-y-6">
@@ -53,8 +81,9 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">
-              {data ? formatCurrency(data.selectedMonthTotal) : "—"}
+              {data ? formatCurrency(data.selectedMonthTotal) : "-"}
             </p>
+            {data && <TrendBadge change={data.monthOverMonthChange} />}
           </CardContent>
         </Card>
         <Card>
@@ -65,7 +94,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">
-              {data ? formatCurrency(data.ytdTotal) : "—"}
+              {data ? formatCurrency(data.ytdTotal) : "-"}
             </p>
           </CardContent>
         </Card>
@@ -77,7 +106,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">
-              {data?.largestCategory?.name ?? "—"}
+              {data?.largestCategory?.name ?? "-"}
             </p>
             {data?.largestCategory && (
               <p className="text-sm text-muted-foreground">
@@ -87,6 +116,47 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Insights */}
+      {data && data.insights && data.insights.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Month-over-Month Insights
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              {data.insights.slice(0, 5).map((insight) => {
+                const isUp = insight.changePercent > 0
+                return (
+                  <div
+                    key={insight.name}
+                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
+                      isUp
+                        ? "border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/30"
+                        : "border-emerald-200 bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-950/30"
+                    }`}
+                  >
+                    {isUp ? (
+                      <TrendingUp className="h-3.5 w-3.5 text-red-500" />
+                    ) : (
+                      <TrendingDown className="h-3.5 w-3.5 text-emerald-500" />
+                    )}
+                    <span className="font-medium">{insight.name}</span>
+                    <span className={isUp ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}>
+                      {isUp ? "+" : ""}{insight.changePercent.toFixed(0)}%
+                    </span>
+                    <span className="text-muted-foreground">
+                      ({isUp ? "+" : ""}{formatCurrency(insight.changeDollar)})
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Charts Row */}
       <div className="grid gap-4 lg:grid-cols-2">

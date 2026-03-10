@@ -8,6 +8,7 @@ import {
   YAxis,
   Tooltip,
   Legend,
+  CartesianGrid,
   ResponsiveContainer,
 } from "recharts"
 
@@ -25,8 +26,11 @@ function formatMonthKey(key: string) {
 
 export function MonthlyBarChart({ data, categoryNames, categoryColors }: MonthlyBarChartProps) {
   const { resolvedTheme } = useTheme()
-  const textColor = resolvedTheme === "dark" ? "#9ca3af" : "#6b7280"
-  const gridColor = resolvedTheme === "dark" ? "#374151" : "#f3f4f6"
+  const isDark = resolvedTheme === "dark"
+  const textColor = isDark ? "#9ca3af" : "#6b7280"
+  const gridColor = isDark ? "#374151" : "#e5e7eb"
+  const tooltipBg = isDark ? "rgba(17, 24, 39, 0.95)" : "rgba(255, 255, 255, 0.95)"
+  const cursorFill = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"
 
   if (!data.length) {
     return <p className="py-8 text-center text-sm text-muted-foreground">No data</p>
@@ -34,7 +38,8 @@ export function MonthlyBarChart({ data, categoryNames, categoryColors }: Monthly
 
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+      <BarChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
         <XAxis
           dataKey="month"
           tickFormatter={formatMonthKey}
@@ -49,6 +54,7 @@ export function MonthlyBarChart({ data, categoryNames, categoryColors }: Monthly
           tickFormatter={(v) => `$${v}`}
         />
         <Tooltip
+          cursor={{ fill: cursorFill }}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           formatter={((value: unknown, name: unknown) => [
             value != null ? `$${Number(value).toFixed(2)}` : "",
@@ -57,19 +63,26 @@ export function MonthlyBarChart({ data, categoryNames, categoryColors }: Monthly
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           labelFormatter={formatMonthKey as any}
           contentStyle={{
-            background: resolvedTheme === "dark" ? "#1f2937" : "#fff",
-            border: "1px solid " + gridColor,
-            borderRadius: 8,
+            background: tooltipBg,
+            border: "none",
+            borderRadius: 10,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+            backdropFilter: "blur(8px)",
+            padding: "8px 14px",
           }}
         />
         <Legend />
-        {categoryNames.map((name) => (
+        {categoryNames.map((name, index) => (
           <Bar
             key={name}
             dataKey={name}
             stackId="a"
             fill={categoryColors[name] ?? "#6366f1"}
-            radius={categoryNames.indexOf(name) === categoryNames.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+            radius={index === categoryNames.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+            isAnimationActive={true}
+            animationDuration={600}
+            animationBegin={index * 60}
+            animationEasing="ease-out"
           />
         ))}
       </BarChart>

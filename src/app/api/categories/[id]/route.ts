@@ -23,10 +23,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  const count = await prisma.expense.count({ where: { categoryId: Number(id) } })
-  if (count > 0) {
+  const expenseCount = await prisma.expense.count({ where: { categoryId: Number(id) } })
+  if (expenseCount > 0) {
     return NextResponse.json(
-      { error: `Cannot delete: ${count} expense(s) use this category` },
+      { error: `Cannot delete: ${expenseCount} expense(s) use this category` },
+      { status: 409 }
+    )
+  }
+  const subCount = await prisma.subscription.count({ where: { categoryId: Number(id) } })
+  if (subCount > 0) {
+    return NextResponse.json(
+      { error: `Cannot delete: ${subCount} subscription(s) use this category` },
       { status: 409 }
     )
   }

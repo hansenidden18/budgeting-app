@@ -16,6 +16,8 @@ interface CategoryPieChartProps {
 
 export function CategoryPieChart({ data }: CategoryPieChartProps) {
   const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
+  const tooltipBg = isDark ? "rgba(17, 24, 39, 0.95)" : "rgba(255, 255, 255, 0.95)"
 
   if (!data.length) {
     return <p className="py-8 text-center text-sm text-muted-foreground">No data for selected period</p>
@@ -32,9 +34,12 @@ export function CategoryPieChart({ data }: CategoryPieChartProps) {
           outerRadius={100}
           paddingAngle={2}
           dataKey="value"
+          isAnimationActive={true}
+          animationDuration={800}
+          animationEasing="ease-out"
         >
           {data.map((entry, index) => (
-            <Cell key={index} fill={entry.color} />
+            <Cell key={index} fill={entry.color} stroke="none" />
           ))}
         </Pie>
         <Tooltip
@@ -42,8 +47,12 @@ export function CategoryPieChart({ data }: CategoryPieChartProps) {
             value != null ? `$${Number(value).toFixed(2)}` : "",
           ]}
           contentStyle={{
-            background: resolvedTheme === "dark" ? "#1f2937" : "#fff",
-            borderRadius: 8,
+            background: tooltipBg,
+            border: "none",
+            borderRadius: 10,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+            backdropFilter: "blur(8px)",
+            padding: "8px 14px",
           }}
         />
         <Legend />

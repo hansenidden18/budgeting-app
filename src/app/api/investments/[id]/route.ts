@@ -12,6 +12,7 @@ export async function PUT(
       where: { id: Number(id) },
       data: {
         ...(body.name && { name: body.name.trim() }),
+        ...(body.ticker !== undefined && { ticker: body.ticker?.trim() || null }),
         ...(body.assetType && { assetType: body.assetType }),
         ...(body.avgBuyPrice !== undefined && { avgBuyPrice: parseFloat(body.avgBuyPrice) }),
         ...(body.currentPrice !== undefined && { currentPrice: parseFloat(body.currentPrice) }),

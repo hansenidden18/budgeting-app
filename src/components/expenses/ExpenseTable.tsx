@@ -1,6 +1,6 @@
 "use client"
 
-import { Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2, Repeat } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -59,7 +59,14 @@ export function ExpenseTable({ expenses, onEdit, onRefresh }: ExpenseTableProps)
               <TableCell className="text-muted-foreground text-sm">
                 {formatDate(expense.date)}
               </TableCell>
-              <TableCell className="font-medium">{expense.description}</TableCell>
+              <TableCell className="font-medium">
+                {expense.description}
+                {expense.subscriptionId && (
+                  <span title="Recurring subscription">
+                    <Repeat className="ml-1.5 inline h-3 w-3 text-muted-foreground" />
+                  </span>
+                )}
+              </TableCell>
               <TableCell>
                 <Badge
                   style={{
