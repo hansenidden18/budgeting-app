@@ -27,14 +27,14 @@ RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/package-lock.json ./package-lock.json
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Install only production deps + prisma + tsx for entrypoint
-RUN npm ci --frozen-lockfile --omit=dev --ignore-scripts
-RUN npx prisma generate
+# Install only production deps (runs postinstall/better-sqlite3 native build)
+RUN npm ci --frozen-lockfile --omit=dev
 
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh

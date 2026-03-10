@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
+import { Check, X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -41,6 +42,15 @@ export function InvestmentForm({ investment, open, onOpenChange, onSuccess }: In
   const [quantity, setQuantity] = useState("")
   const [notes, setNotes] = useState("")
   const [loading, setLoading] = useState(false)
+  const [verifying, setVerifying] = useState(false)
+  const [tickerResult, setTickerResult] = useState<{
+    valid: boolean
+    price?: number
+    currency?: string
+    fullName?: string
+    exchangeName?: string
+    error?: string
+  } | null>(null)
 
   const isPrivate = assetType === "PRIVATE_EQUITY"
 
@@ -53,8 +63,31 @@ export function InvestmentForm({ investment, open, onOpenChange, onSuccess }: In
       setCurrentPrice(investment ? String(investment.currentPrice) : "")
       setQuantity(investment?.quantity != null ? String(investment.quantity) : "")
       setNotes(investment?.notes ?? "")
+      setTickerResult(null)
     }
   }, [open, investment])
+
+  async function verifyTicker() {
+    if (!ticker.trim()) return
+    setVerifying(true)
+    setTickerResult(null)
+    try {
+      const res = await fetch("/api/investments/verify-ticker", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticker: ticker.trim() }),
+      })
+      const data = await res.json()
+      setTickerResult(data)
+      if (data.valid && data.price) {
+        setCurrentPrice(String(data.price))
+      }
+    } catch {
+      setTickerResult({ valid: false, error: "Network error" })
+    } finally {
+      setVerifying(false)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -126,15 +159,59 @@ export function InvestmentForm({ investment, open, onOpenChange, onSuccess }: In
           {!isPrivate && (
             <div className="space-y-2">
               <Label htmlFor="ticker">Ticker (for live price refresh)</Label>
-              <Input
-                id="ticker"
-                value={ticker}
-                onChange={(e) => setTicker(e.target.value.toUpperCase())}
-                placeholder="e.g. AAPL, BTC-USD, VTI"
-              />
-              <p className="text-xs text-muted-foreground">
-                Optional. Crypto uses format like BTC-USD, ETH-USD.
-              </p>
+              <div className="flex gap-2">
+                <Input
+                  id="ticker"
+                  value={ticker}
+                  onChange={(e) => { setTicker(e.target.value.toUpperCase()); setTickerResult(null) }}
+                  placeholder="e.g. AAPL, BTC-USD, VTI"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={verifyTicker}
+                  disabled={!ticker.trim() || verifying}
+                  className="shrink-0"
+                >
+                  {verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify"}
+                </Button>
+              </div>
+              {tickerResult && (
+                <div className={`flex items-start gap-2 rounded-md border px-3 py-2 text-sm ${
+                  tickerResult.valid
+                    ? "border-emerald-200 bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-950/30"
+                    : "border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/30"
+                }`}>
+                  {tickerResult.valid ? (
+                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                  ) : (
+                    <X className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600" />
+                  )}
+                  <div>
+                    {tickerResult.valid ? (
+                      <>
+                        <p className="font-medium">{tickerResult.fullName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          ${tickerResult.price?.toFixed(2)} {tickerResult.currency}
+                          {tickerResult.exchangeName ? ` - ${tickerResult.exchangeName}` : ""}
+                        </p>
+                        <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                          Current price auto-filled above.
+                        </p>
+                      </>
+                    ) : (
+                      <p>{tickerResult.error}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+              {!tickerResult && (
+                <p className="text-xs text-muted-foreground">
+                  Optional. Click Verify to check the ticker and auto-fill current price. Crypto: BTC-USD, ETH-USD.
+                </p>
+              )}
             </div>
           )}
           <div className="grid grid-cols-2 gap-4">
