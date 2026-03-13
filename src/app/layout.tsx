@@ -20,10 +20,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <Navbar />
-          <main className="mx-auto max-w-7xl px-4 py-6">
+          <main className="mx-auto max-w-7xl px-4 py-6 pb-24">
             {children}
           </main>
+          <Navbar />
           <Toaster richColors />
         </ThemeProvider>
       </body>

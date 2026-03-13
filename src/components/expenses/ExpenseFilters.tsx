@@ -8,16 +8,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { TagsSelector } from "@/components/ui/tags-selector"
 import type { Category } from "@/lib/types"
 
 interface ExpenseFiltersProps {
   month: string
   year: string
-  categoryId: string
+  selectedCategoryIds: string[]
   search: string
   onMonthChange: (v: string) => void
   onYearChange: (v: string) => void
-  onCategoryChange: (v: string) => void
+  onCategoryChange: (ids: string[]) => void
   onSearchChange: (v: string) => void
   categories: Category[]
 }
@@ -42,52 +43,63 @@ const currentYear = new Date().getFullYear()
 const YEARS = Array.from({ length: 5 }, (_, i) => String(currentYear - i))
 
 export function ExpenseFilters({
-  month, year, categoryId, search,
+  month, year, selectedCategoryIds, search,
   onMonthChange, onYearChange, onCategoryChange, onSearchChange,
   categories,
 }: ExpenseFiltersProps) {
+  const categoryTags = categories.map((cat) => ({
+    id: String(cat.id),
+    label: cat.name,
+    color: cat.color,
+  }))
+
   return (
-    <div className="flex flex-wrap gap-3">
-      <Select value={year} onValueChange={onYearChange}>
-        <SelectTrigger className="w-28">
-          <SelectValue placeholder="Year" />
-        </SelectTrigger>
-        <SelectContent>
-          {YEARS.map((y) => (
-            <SelectItem key={y} value={y}>{y}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-3">
+        <Select value={year} onValueChange={onYearChange}>
+          <SelectTrigger className="w-28">
+            <SelectValue placeholder="Year" />
+          </SelectTrigger>
+          <SelectContent>
+            {YEARS.map((y) => (
+              <SelectItem key={y} value={y}>{y}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-      <Select value={month} onValueChange={onMonthChange}>
-        <SelectTrigger className="w-36">
-          <SelectValue placeholder="Month" />
-        </SelectTrigger>
-        <SelectContent>
-          {MONTHS.map((m) => (
-            <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        <Select value={month} onValueChange={onMonthChange}>
+          <SelectTrigger className="w-36">
+            <SelectValue placeholder="Month" />
+          </SelectTrigger>
+          <SelectContent>
+            {MONTHS.map((m) => (
+              <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-      <Select value={categoryId} onValueChange={onCategoryChange}>
-        <SelectTrigger className="w-40">
-          <SelectValue placeholder="All categories" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="0">All categories</SelectItem>
-          {categories.map((cat) => (
-            <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        <Input
+          placeholder="Search description..."
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="w-52"
+        />
+      </div>
 
-      <Input
-        placeholder="Search description..."
-        value={search}
-        onChange={(e) => onSearchChange(e.target.value)}
-        className="w-52"
-      />
+      {/* Category tag filter - click to toggle, multi-select, instant */}
+      <div>
+        <p className="text-xs text-muted-foreground mb-1.5 font-medium">
+          Filter by category
+          {selectedCategoryIds.length > 0 && (
+            <span className="ml-1.5 text-foreground">({selectedCategoryIds.length} selected)</span>
+          )}
+        </p>
+        <TagsSelector
+          tags={categoryTags}
+          selectedIds={selectedCategoryIds}
+          onSelectionChange={onCategoryChange}
+        />
+      </div>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PeriodFilter } from "@/components/dashboard/PeriodFilter"
 import { MonthlyBarChart } from "@/components/dashboard/MonthlyBarChart"
@@ -8,7 +9,7 @@ import { CategoryPieChart } from "@/components/dashboard/CategoryPieChart"
 import { TrendLineChart } from "@/components/dashboard/TrendLineChart"
 import { YtdSummaryTable } from "@/components/dashboard/YtdSummaryTable"
 import { formatCurrency } from "@/lib/utils"
-import { TrendingUp, TrendingDown, Minus } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus, DollarSign, Calendar, PieChart } from "lucide-react"
 import type { DashboardData } from "@/lib/types"
 
 function TrendBadge({ change }: { change: number | null }) {
@@ -22,7 +23,6 @@ function TrendBadge({ change }: { change: number | null }) {
       </span>
     )
   }
-  // Spending up = bad (red), spending down = good (green)
   const isUp = change > 0
   return (
     <span className={`inline-flex items-center gap-1 text-xs font-medium ${isUp ? "text-red-500" : "text-emerald-500"}`}>
@@ -30,6 +30,16 @@ function TrendBadge({ change }: { change: number | null }) {
       {isUp ? "+" : ""}{change.toFixed(1)}% vs last month
     </span>
   )
+}
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.98 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: "spring" as const, stiffness: 300, damping: 25 },
+  },
 }
 
 export default function DashboardPage() {
@@ -50,7 +60,6 @@ export default function DashboardPage() {
   }, [year, month])
 
   useEffect(() => {
-    // Auto-generate subscription expenses for the current month
     fetch("/api/subscriptions/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -72,139 +81,189 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Selected Month
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {data ? formatCurrency(data.selectedMonthTotal) : "-"}
-            </p>
-            {data && <TrendBadge change={data.monthOverMonthChange} />}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Year to Date
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {data ? formatCurrency(data.ytdTotal) : "-"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Largest Category
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {data?.largestCategory?.name ?? "-"}
-            </p>
-            {data?.largestCategory && (
-              <p className="text-sm text-muted-foreground">
-                {formatCurrency(data.largestCategory.amount)}
+      <motion.div
+        className="grid gap-4 sm:grid-cols-3"
+        initial="hidden"
+        animate="visible"
+        variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
+      >
+        <motion.div variants={cardVariants}>
+          <Card className="relative overflow-hidden">
+            <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <DollarSign className="h-4 w-4 text-primary" />
+            </div>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Selected Month
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold font-mono">
+                {data ? formatCurrency(data.selectedMonthTotal) : "-"}
               </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+              {data && <TrendBadge change={data.monthOverMonthChange} />}
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div variants={cardVariants}>
+          <Card className="relative overflow-hidden">
+            <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <Calendar className="h-4 w-4 text-primary" />
+            </div>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Year to Date
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold font-mono">
+                {data ? formatCurrency(data.ytdTotal) : "-"}
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div variants={cardVariants}>
+          <Card className="relative overflow-hidden">
+            <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <PieChart className="h-4 w-4 text-primary" />
+            </div>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Largest Category
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">
+                {data?.largestCategory?.name ?? "-"}
+              </p>
+              {data?.largestCategory && (
+                <p className="text-sm text-muted-foreground font-mono">
+                  {formatCurrency(data.largestCategory.amount)}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
 
       {/* Insights */}
       {data && data.insights && data.insights.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Month-over-Month Insights
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
-              {data.insights.slice(0, 5).map((insight) => {
-                const isUp = insight.changePercent > 0
-                return (
-                  <div
-                    key={insight.name}
-                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
-                      isUp
-                        ? "border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/30"
-                        : "border-emerald-200 bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-950/30"
-                    }`}
-                  >
-                    {isUp ? (
-                      <TrendingUp className="h-3.5 w-3.5 text-red-500" />
-                    ) : (
-                      <TrendingDown className="h-3.5 w-3.5 text-emerald-500" />
-                    )}
-                    <span className="font-medium">{insight.name}</span>
-                    <span className={isUp ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}>
-                      {isUp ? "+" : ""}{insight.changePercent.toFixed(0)}%
-                    </span>
-                    <span className="text-muted-foreground">
-                      ({isUp ? "+" : ""}{formatCurrency(insight.changeDollar)})
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Month-over-Month Insights
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-3">
+                {data.insights.slice(0, 5).map((insight) => {
+                  const isUp = insight.changePercent > 0
+                  return (
+                    <div
+                      key={insight.name}
+                      className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
+                        isUp
+                          ? "border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/30"
+                          : "border-emerald-200 bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-950/30"
+                      }`}
+                    >
+                      {isUp ? (
+                        <TrendingUp className="h-3.5 w-3.5 text-red-500" />
+                      ) : (
+                        <TrendingDown className="h-3.5 w-3.5 text-emerald-500" />
+                      )}
+                      <span className="font-medium">{insight.name}</span>
+                      <span className={isUp ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}>
+                        {isUp ? "+" : ""}{insight.changePercent.toFixed(0)}%
+                      </span>
+                      <span className="text-muted-foreground">
+                        ({isUp ? "+" : ""}{formatCurrency(insight.changeDollar)})
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       )}
 
       {/* Charts Row */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Monthly Spending by Category</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!loading && data && (
-              <MonthlyBarChart
-                data={data.monthlyByCategory}
-                categoryNames={data.categoryNames ?? []}
-                categoryColors={data.categoryColors ?? {}}
-              />
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Category Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!loading && data && (
-              <CategoryPieChart data={data.periodByCategory} />
-            )}
-          </CardContent>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Monthly Spending by Category</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!loading && data && (
+                <MonthlyBarChart
+                  data={data.monthlyByCategory}
+                  categoryNames={data.categoryNames ?? []}
+                  categoryColors={data.categoryColors ?? {}}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Category Breakdown</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!loading && data && (
+                <CategoryPieChart data={data.periodByCategory} />
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
       {/* Trend */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Monthly Spending Trend</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {!loading && data && <TrendLineChart data={data.monthlyTotals} />}
-        </CardContent>
-      </Card>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Monthly Spending Trend</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!loading && data && <TrendLineChart data={data.monthlyTotals} />}
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* YTD Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Year-to-Date Summary ({year})</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {!loading && data && <YtdSummaryTable ytdTable={data.ytdTable} />}
-        </CardContent>
-      </Card>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Year-to-Date Summary ({year})</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {!loading && data && <YtdSummaryTable ytdTable={data.ytdTable} />}
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   )
 }

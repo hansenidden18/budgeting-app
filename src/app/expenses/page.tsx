@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
 import { Plus, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ExpenseTable } from "@/components/expenses/ExpenseTable"
@@ -12,7 +12,7 @@ import { formatCurrency } from "@/lib/utils"
 import type { Expense, Category } from "@/lib/types"
 
 export default function ExpensesPage() {
-  const [expenses, setExpenses] = useState<Expense[]>([])
+  const [allExpenses, setAllExpenses] = useState<Expense[]>([])
   const [total, setTotal] = useState(0)
   const [categories, setCategories] = useState<Category[]>([])
   const [editing, setEditing] = useState<Expense | undefined>()
@@ -22,7 +22,7 @@ export default function ExpensesPage() {
   const now = new Date()
   const [month, setMonth] = useState(String(now.getMonth() + 1))
   const [year, setYear] = useState(String(now.getFullYear()))
-  const [categoryId, setCategoryId] = useState("0")
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([])
   const [search, setSearch] = useState("")
 
   const fetchCategories = useCallback(async () => {
@@ -30,26 +30,25 @@ export default function ExpensesPage() {
     setCategories(await res.json())
   }, [])
 
+  // Fetch all expenses for year/month/search - no category filter on API
   const fetchExpenses = useCallback(async () => {
     const params = new URLSearchParams()
     if (year) params.set("year", year)
     if (month && month !== "0") params.set("month", month)
-    if (categoryId && categoryId !== "0") params.set("categoryId", categoryId)
     if (search) params.set("search", search)
-    params.set("limit", "200")
+    params.set("limit", "500")
 
     const res = await fetch(`/api/expenses?${params.toString()}`)
     const data = await res.json()
-    setExpenses(data.expenses ?? [])
+    setAllExpenses(data.expenses ?? [])
     setTotal(data.total ?? 0)
-  }, [year, month, categoryId, search])
+  }, [year, month, search])
 
   useEffect(() => {
     fetchCategories()
   }, [fetchCategories])
 
   useEffect(() => {
-    // Auto-generate subscription expenses for the viewed month
     const m = month && month !== "0" ? month : String(now.getMonth() + 1)
     const y = year || String(now.getFullYear())
     fetch("/api/subscriptions/generate", {
@@ -58,7 +57,14 @@ export default function ExpensesPage() {
       body: JSON.stringify({ year: Number(y), month: Number(m) }),
     }).then(() => fetchExpenses())
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [year, month])
+  }, [year, month, search])
+
+  // Client-side category filter - instant, no API call
+  const expenses = useMemo(() => {
+    if (selectedCategoryIds.length === 0) return allExpenses
+    const idSet = new Set(selectedCategoryIds.map(Number))
+    return allExpenses.filter((e) => idSet.has(e.categoryId))
+  }, [allExpenses, selectedCategoryIds])
 
   const totalAmount = expenses.reduce((sum, e) => sum + e.amount, 0)
 
@@ -68,14 +74,14 @@ export default function ExpensesPage() {
         <div>
           <h1 className="text-2xl font-bold">Expenses</h1>
           <p className="text-sm text-muted-foreground">
-            {total} record(s) - Total: <span className="font-medium">{formatCurrency(totalAmount)}</span>
+            {expenses.length} record(s) - Total: <span className="font-medium">{formatCurrency(totalAmount)}</span>
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setShowImport(true)}>
             <Upload className="mr-2 h-4 w-4" /> Import CSV
           </Button>
-          <ExportCsvButton month={month} year={year} categoryId={categoryId} />
+          <ExportCsvButton month={month} year={year} categoryId="0" />
           <Button onClick={() => setShowAdd(true)}>
             <Plus className="mr-2 h-4 w-4" /> Add Expense
           </Button>
@@ -85,11 +91,11 @@ export default function ExpensesPage() {
       <ExpenseFilters
         month={month}
         year={year}
-        categoryId={categoryId}
+        selectedCategoryIds={selectedCategoryIds}
         search={search}
         onMonthChange={setMonth}
         onYearChange={setYear}
-        onCategoryChange={setCategoryId}
+        onCategoryChange={setSelectedCategoryIds}
         onSearchChange={setSearch}
         categories={categories}
       />
