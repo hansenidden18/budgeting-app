@@ -1,5 +1,14 @@
 "use client"
 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { formatCurrency } from "@/lib/utils"
 
 interface YtdTableData {
@@ -26,27 +35,27 @@ export function YtdSummaryTable({ ytdTable }: YtdSummaryTableProps) {
   const grandTotal = monthTotals.reduce((a, b) => a + b, 0)
 
   return (
-    <div className="overflow-x-auto rounded-md border">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b bg-muted/50">
-            <th className="sticky left-0 bg-muted/50 px-4 py-3 text-left font-medium whitespace-nowrap">
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-muted/50 hover:bg-muted/50">
+            <TableHead className="sticky left-0 z-10 bg-muted/50 px-4 whitespace-nowrap">
               Category
-            </th>
+            </TableHead>
             {months.map((m) => (
-              <th key={m} className="px-3 py-3 text-right font-medium whitespace-nowrap">
+              <TableHead key={m} className="text-right px-3 whitespace-nowrap">
                 {m}
-              </th>
+              </TableHead>
             ))}
-            <th className="px-4 py-3 text-right font-semibold whitespace-nowrap">Total</th>
-          </tr>
-        </thead>
-        <tbody>
+            <TableHead className="text-right px-4 font-semibold whitespace-nowrap">Total</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {categories.map((cat, i) => {
             const rowTotal = months.reduce((sum, m) => sum + (data[cat]?.[m] ?? 0), 0)
             return (
-              <tr key={cat} className={i % 2 === 0 ? "" : "bg-muted/20"}>
-                <td className="sticky left-0 bg-background px-4 py-2 font-medium whitespace-nowrap">
+              <TableRow key={cat} className={i % 2 !== 0 ? "bg-muted/20" : ""}>
+                <TableCell className="sticky left-0 z-10 bg-background px-4 font-medium whitespace-nowrap">
                   <span className="flex items-center gap-2">
                     <span
                       className="inline-block h-2.5 w-2.5 rounded-full flex-shrink-0"
@@ -54,31 +63,31 @@ export function YtdSummaryTable({ ytdTable }: YtdSummaryTableProps) {
                     />
                     {cat}
                   </span>
-                </td>
+                </TableCell>
                 {months.map((m) => (
-                  <td key={m} className="px-3 py-2 text-right font-mono text-muted-foreground">
+                  <TableCell key={m} className="text-right font-mono text-muted-foreground px-3">
                     {data[cat]?.[m] ? formatCurrency(data[cat][m]) : "-"}
-                  </td>
+                  </TableCell>
                 ))}
-                <td className="px-4 py-2 text-right font-mono font-semibold">
+                <TableCell className="text-right font-mono font-semibold px-4">
                   {formatCurrency(rowTotal)}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )
           })}
-        </tbody>
-        <tfoot>
-          <tr className="border-t bg-muted/50 font-semibold">
-            <td className="sticky left-0 bg-muted/50 px-4 py-3">Total</td>
+        </TableBody>
+        <TableFooter className="bg-transparent">
+          <TableRow className="hover:bg-transparent font-semibold">
+            <TableCell className="sticky left-0 z-10 bg-muted/50 px-4">Total</TableCell>
             {monthTotals.map((t, i) => (
-              <td key={i} className="px-3 py-3 text-right font-mono">
+              <TableCell key={i} className="text-right font-mono px-3">
                 {formatCurrency(t)}
-              </td>
+              </TableCell>
             ))}
-            <td className="px-4 py-3 text-right font-mono">{formatCurrency(grandTotal)}</td>
-          </tr>
-        </tfoot>
-      </table>
+            <TableCell className="text-right font-mono px-4">{formatCurrency(grandTotal)}</TableCell>
+          </TableRow>
+        </TableFooter>
+      </Table>
     </div>
   )
 }

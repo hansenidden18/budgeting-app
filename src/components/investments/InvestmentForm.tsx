@@ -113,7 +113,7 @@ export function InvestmentForm({ investment, open, onOpenChange, onSuccess }: In
       if (!res.ok) {
         toast.error(data.error ?? "Something went wrong")
       } else {
-        toast.success(isEdit ? "Investment updated" : "Investment added")
+        toast.success(isEdit ? "Investment updated" : data.merged ? "Holding merged - quantity updated" : "Investment added")
         onOpenChange(false)
         onSuccess()
       }
