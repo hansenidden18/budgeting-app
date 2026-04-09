@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { computeBudgetStatus } from "@/lib/budget"
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -151,6 +152,8 @@ export async function GET(request: Request) {
     return d <= now && d >= startOfYear
   })
 
+  const budgetStatus = await computeBudgetStatus(year, month)
+
   return NextResponse.json({
     monthlyByCategory,
     periodByCategory,
@@ -169,5 +172,6 @@ export async function GET(request: Request) {
     categoryNames: allCatNames,
     categoryColors: Object.fromEntries(categories.map((c) => [c.name, c.color])),
     insights,
+    budgetStatus,
   })
 }

@@ -15,6 +15,7 @@ import {
 
 interface TrendLineChartProps {
   data: Array<{ month: string; total: number }>
+  budgetLimit?: number
 }
 
 function formatMonthKey(key: string) {
@@ -40,7 +41,7 @@ function CustomTooltip({ active, payload, label }: {
   )
 }
 
-export function TrendLineChart({ data }: TrendLineChartProps) {
+export function TrendLineChart({ data, budgetLimit }: TrendLineChartProps) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
   const textColor = isDark ? "#71717a" : "#a1a1aa"
@@ -128,6 +129,20 @@ export function TrendLineChart({ data }: TrendLineChartProps) {
               position: "insideTopRight",
             }}
           />
+          {budgetLimit != null && (
+            <ReferenceLine
+              y={budgetLimit}
+              stroke={isDark ? "#f87171" : "#ef4444"}
+              strokeDasharray="8 4"
+              strokeOpacity={0.6}
+              label={{
+                value: `budget $${budgetLimit >= 1000 ? `${(budgetLimit / 1000).toFixed(1)}k` : budgetLimit.toFixed(0)}`,
+                fill: isDark ? "#f87171" : "#ef4444",
+                fontSize: 10,
+                position: "insideTopLeft",
+              }}
+            />
+          )}
           <Area
             type="monotone"
             dataKey="total"

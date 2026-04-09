@@ -8,6 +8,8 @@ import { MonthlyBarChart } from "@/components/dashboard/MonthlyBarChart"
 import { CategoryPieChart } from "@/components/dashboard/CategoryPieChart"
 import { TrendLineChart } from "@/components/dashboard/TrendLineChart"
 import { YtdSummaryTable } from "@/components/dashboard/YtdSummaryTable"
+import { BudgetProgressCard } from "@/components/dashboard/BudgetProgressCard"
+import { BudgetDialog } from "@/components/dashboard/BudgetDialog"
 import { formatCurrency } from "@/lib/utils"
 import { TrendingUp, TrendingDown, Minus, DollarSign, Calendar, PieChart } from "lucide-react"
 import type { DashboardData } from "@/lib/types"
@@ -48,6 +50,7 @@ export default function DashboardPage() {
   const [year, setYear] = useState(String(now.getFullYear()))
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [budgetDialogOpen, setBudgetDialogOpen] = useState(false)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -144,6 +147,18 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </motion.div>
+      </motion.div>
+
+      {/* Budget Progress */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25 }}
+      >
+        <BudgetProgressCard
+          budgetStatus={data?.budgetStatus ?? null}
+          onSetBudget={() => setBudgetDialogOpen(true)}
+        />
       </motion.div>
 
       {/* Insights */}
@@ -244,7 +259,12 @@ export default function DashboardPage() {
             <CardTitle className="text-base">Monthly Spending Trend</CardTitle>
           </CardHeader>
           <CardContent>
-            {!loading && data && <TrendLineChart data={data.monthlyTotals} />}
+            {!loading && data && (
+              <TrendLineChart
+                data={data.monthlyTotals}
+                budgetLimit={data.budgetStatus?.baseLimit}
+              />
+            )}
           </CardContent>
         </Card>
       </motion.div>
@@ -264,6 +284,14 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </motion.div>
+      <BudgetDialog
+        open={budgetDialogOpen}
+        onOpenChange={setBudgetDialogOpen}
+        year={Number(year)}
+        month={Number(month)}
+        currentBudget={data?.budgetStatus ?? null}
+        onSave={() => fetchData()}
+      />
     </div>
   )
 }

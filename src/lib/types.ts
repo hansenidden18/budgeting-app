@@ -82,6 +82,27 @@ export interface SavingsGoal {
   updatedAt: string
 }
 
+export interface MonthlyBudget {
+  id: number
+  year: number
+  month: number
+  amount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface BudgetStatus {
+  hasBudget: boolean
+  baseLimit: number
+  effectiveLimit: number
+  spent: number
+  remaining: number
+  rolloverAmount: number
+  percentUsed: number
+  isOverBudget: boolean
+  isDefault: boolean
+}
+
 export interface CategoryInsight {
   name: string
   current: number
@@ -108,6 +129,7 @@ export interface DashboardData {
   categoryNames: string[]
   categoryColors: Record<string, string>
   insights: CategoryInsight[]
+  budgetStatus: BudgetStatus | null
 }
 
 export const ASSET_TYPE_LABELS: Record<AssetType, string> = {
